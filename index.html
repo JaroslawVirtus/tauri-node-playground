@@ -6,51 +6,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tauri App</title>
     <script type="module" src="/src/main.ts" defer></script>
-    <style>
-      .logo.vite:hover {
-        filter: drop-shadow(0 0 2em #747bff);
-      }
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+        <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
 
-      .logo.typescript:hover {
-        filter: drop-shadow(0 0 2em #2d79c7);
+    <style>
+      [x-cloak] {
+        display: none;
       }
     </style>
   </head>
 
-  <body>
-    <div class="container">
-      <h1>Welcome to Tauri!</h1>
-
-      <div class="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/src/assets/vite.svg" class="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img
-            src="/src/assets/tauri.svg"
-            class="logo tauri"
-            alt="Tauri logo"
-          />
-        </a>
-        <a href="https://www.typescriptlang.org/docs" target="_blank">
-          <img
-            src="/src/assets/typescript.svg"
-            class="logo typescript"
-            alt="typescript logo"
-          />
-        </a>
+  <body x-data x-bind:class="$store.weather.darkMode && 'darkmode'">
+    <div x-init="$store.weather.loadWeather()" class="container">
+      <div x-show="!$store.weather.dataLoaded" x-transition>
+        <img src="/src/assets/greeter.png" class="logo" alt="Vite logo" />
       </div>
-
-      <p>Click on the Tauri logo to learn more about the framework</p>
-
-      <div class="row">
-        <div>
-          <input id="greet-input" placeholder="Enter a name..." />
-          <button id="greet-button" type="button">Greet</button>
+      <div x-bind:class="$store.weather.dataLoaded ? 'show' : 'hide'" class="weatherContainer" x-cloak>
+        <svg @click="$store.weather.toggleDarkMode()" class="darkmodeIcon" width="30px" height="30px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+          <title>ic_fluent_dark_theme_24_regular</title>
+          <desc>Created with Sketch.</desc>
+          <g id="🔍-Product-Icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <g id="ic_fluent_dark_theme_24_regular" fill="#212121" fill-rule="nonzero">
+                  <path d="M12,22 C17.5228475,22 22,17.5228475 22,12 C22,6.4771525 17.5228475,2 12,2 C6.4771525,2 2,6.4771525 2,12 C2,17.5228475 6.4771525,22 12,22 Z M12,20.5 L12,3.5 C16.6944204,3.5 20.5,7.30557963 20.5,12 C20.5,16.6944204 16.6944204,20.5 12,20.5 Z" id="🎨-Color">
+      
+      </path>
+              </g>
+          </g>
+      </svg>
+        <p x-text="$store.weather.date"></p>
+        <h3 class="mt-10 text-2xl">Kraków</h2>
+        <img style="margin: 0 auto" x-bind:src="$store.weather.imageAddres"/>
+        <h2 class="mb-10 text-6xl"><span x-text="$store.weather.data.current_weather.temperature"></span>&#176;</h2>
+        <div x-show="$store.weather.hourlyData.length > 0" class="glide">
+          <div class="swiper">
+            <div class="swiper-wrapper">
+              <template x-for="post in $store.weather.hourlyData">
+                <div class="swiper-slide" >
+                  <p x-text="post.time"></p>
+                  <p><span x-text="post.temperature"></span>&#176;</p>
+                </div>
+              </template>
+            </div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+          </div>
         </div>
       </div>
-
-      <p id="greet-msg"></p>
     </div>
   </body>
+  <script>
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    document.addEventListener('alpine:init', () => {
+      Alpine.store('weather', {
+        data: {},
+        hourlyData: [{temperature: "test", time: "test"}],
+        dataLoaded: false,
+        imageAddres: '',
+        darkMode: false,
+        toggleDarkMode() {
+          console.log('wat')
+          this.darkMode = !this.darkMode
+        },
+        date: () => {
+          const d = new Date()
+          return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
+        },
+        loadWeather() {
+          axios.get('https://api.open-meteo.com/v1/forecast?latitude=50.06&longitude=19.94&hourly=temperature_2m&current_weather=true&forecast_days=7').then((response) =>{
+            this.data = response.data
+            this.imageAddres = `/src/assets/icons/0${response.data.current_weather.weathercode}d.png`
+            this.hourlyData = response.data.hourly.time.map((el, index) => {return {time: `${days[new Date(el).getDay()]} ${new Date(el).getHours()}:00`, temperature: response.data.hourly.temperature_2m[index]}}).slice(0,24)
+            setTimeout(() => {
+              this.dataLoaded = true
+            },2000)
+            
+          })
+        }
+      })
+    })
+    new Swiper('.swiper', {
+      slidesPerView: 3,
+      autoHeight: true,
+  // Optional parameters
+  direction: 'horizontal',
+  loop: true,
+
+  // Navigation arrows
+  navigation: {
+    nextEl: '.swiper-button-next',
+    prevEl: '.swiper-button-prev',
+  },
+
+});
+  </script>
 </html>

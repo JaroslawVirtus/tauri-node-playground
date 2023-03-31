@@ -7,18 +7,16 @@
   "scripts": {
     "dev": "run-p server:dev app:dev",
     "build": "run-s server:build app:build",
-
     "app:dev": "vite",
     "app:build": "tsc && vite build",
-
     "server:dev": "node scripts/server-watch.js",
     "server:build": "node scripts/server-build.js",
     "server:kill": "npx kill-port 1337",
-
     "preview": "vite preview",
     "tauri": "tauri"
   },
   "dependencies": {
+    "@glidejs/glide": "^3.6.0",
     "@tauri-apps/api": "^1.2.0"
   },
   "devDependencies": {
